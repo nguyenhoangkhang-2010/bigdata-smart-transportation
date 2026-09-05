@@ -1,18 +1,23 @@
 from fastapi import FastAPI
 
+from backend.app.core.config import get_settings
+
+
+settings = get_settings()
+
 app = FastAPI(
-    title="BigData Smart Transportation Platform",
+    title=settings.app_name,
+    version=settings.app_version,
     description="Big Data Analytics Platform for Smart Transportation",
-    version="0.1.0",
 )
 
 
 @app.get("/")
 async def root() -> dict[str, str]:
     return {
-        "name": "BigData Smart Transportation Platform",
+        "name": settings.app_name,
         "status": "ok",
-        "version": "0.1.0",
+        "version": settings.app_version,
     }
 
 
@@ -20,4 +25,5 @@ async def root() -> dict[str, str]:
 async def health() -> dict[str, str]:
     return {
         "status": "healthy",
+        "environment": settings.environment,
     }
