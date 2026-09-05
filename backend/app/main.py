@@ -1,5 +1,7 @@
 from fastapi import FastAPI
+from sqlalchemy import text
 
+from backend.app.core.database import engine
 from backend.app.core.config import get_settings
 
 
@@ -23,7 +25,19 @@ async def root() -> dict[str, str]:
 
 @app.get("/health")
 async def health() -> dict[str, str]:
-    return {
-        "status": "healthy",
-        "environment": settings.environment,
-    }
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "environment": settings.environment,
+        }
+
+    except Exception:
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "environment": settings.environment,
+        }

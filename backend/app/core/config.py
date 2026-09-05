@@ -8,6 +8,11 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: str = "development"
     debug: bool = True
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_db: str = "smart_transportation"
+    postgres_user: str = "bigdata"
+    postgres_password: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -16,6 +21,14 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+@property
+def postgres_url(self) -> str:
+    return (
+        f"postgresql+psycopg://"
+        f"{self.postgres_user}:{self.postgres_password}"
+        f"@{self.postgres_host}:{self.postgres_port}"
+        f"/{self.postgres_db}"
+    )
 
 @lru_cache
 def get_settings() -> Settings:
