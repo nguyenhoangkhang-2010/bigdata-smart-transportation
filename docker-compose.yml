@@ -82,7 +82,46 @@ services:
     ports:
       - "9092:9092"
 
+  namenode:
+    image: apache/hadoop:3.4.1
+    container_name: bigdata-namenode
+    hostname: namenode
+    restart: unless-stopped
+    user: "0:0"
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    volumes:
+      - namenode_data:/tmp/hadoop-hadoop/dfs/name
+      - ./hdfs/configs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./hdfs/configs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+    command: >
+      bash -c "
+      if [ ! -d /tmp/hadoop-hadoop/dfs/name/current ]; then
+        hdfs namenode -format -force -nonInteractive;
+      fi &&
+      hdfs namenode
+      "
+
+  datanode:
+    image: apache/hadoop:3.4.1
+    container_name: bigdata-datanode
+    hostname: datanode
+    restart: unless-stopped
+    user: "0:0"
+    ports:
+      - "9864:9864"
+    volumes:
+      - datanode_data:/tmp/hadoop-hadoop/dfs/data
+      - ./hdfs/configs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./hdfs/configs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+    depends_on:
+      - namenode
+    command: hdfs datanode
+
 volumes:
   postgres_data:
   mongodb_data:
   redis_data:
+  namenode_data:
+  datanode_data:
