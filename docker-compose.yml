@@ -134,9 +134,64 @@ services:
       tail -f /dev/null
       "
 
+  hive-metastore:
+    build:
+      context: ./hive
+      dockerfile: docker/Dockerfile
+    container_name: bigdata-hive-metastore
+    restart: unless-stopped
+
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      SERVICE_OPTS: >-
+        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/hive_metastore
+        -Djavax.jdo.option.ConnectionUserName=bigdata
+        -Djavax.jdo.option.ConnectionPassword=bigdata
+
+    volumes:
+      - ./hdfs/configs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./hdfs/configs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+
+    ports:
+      - "9083:9083"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      namenode:
+        condition: service_started
+
+  hive-server:
+    build:
+      context: ./hive
+      dockerfile: docker/Dockerfile
+    container_name: bigdata-hive-server
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: hiveserver2
+      IS_RESUME: "true"
+      HIVE_SERVER2_THRIFT_BIND_HOST: 0.0.0.0
+      HIVE_SERVER2_THRIFT_PORT: 10000
+      HIVE_SERVER2_TRANSPORT_MODE: binary
+      SERVICE_OPTS: >-
+        -Dhive.metastore.uris=thrift://hive-metastore:9083
+    entrypoint: >
+      bash -c "rm -f /opt/hive/conf/*.pid && exec /entrypoint.sh"
+    volumes:
+      - ./hdfs/configs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./hdfs/configs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    depends_on:
+      - hive-metastore
+
 volumes:
   postgres_data:
   mongodb_data:
   redis_data:
   namenode_data:
   datanode_data:
+  hive_warehouse:
