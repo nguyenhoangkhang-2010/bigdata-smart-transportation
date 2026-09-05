@@ -122,17 +122,17 @@ services:
   spark:
     image: apache/spark:4.0.0
     container_name: bigdata-spark
-    restart: unless-stopped
+    command:
+      - bash
+      - -c
+      - ' /opt/spark/sbin/start-master.sh && tail -f /dev/null '
     environment:
       SPARK_NO_DAEMONIZE: "true"
+    volumes:
+      - ./spark:/opt/spark/work-dir/spark
     ports:
       - "8080:8080"
       - "7077:7077"
-    command: >
-      bash -c "
-      /opt/spark/sbin/start-master.sh &&
-      tail -f /dev/null
-      "
 
   hive-metastore:
     build:
