@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     
     #TLC Data
     tlc_processed_path: str
+    
+    # HDFS
+    hdfs_webhdfs_url: str
+    hdfs_user: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
