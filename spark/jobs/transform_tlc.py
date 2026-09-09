@@ -1,20 +1,44 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+import argparse
 
 
-INPUT = (
+DEFAULT_INPUT = (
     "hdfs://namenode:9000/"
     "data/smart_transportation/raw/tlc/"
     "yellow_tripdata_2026-01.parquet"
 )
 
-OUTPUT = (
+DEFAULT_OUTPUT = (
     "hdfs://namenode:9000/"
     "data/smart_transportation/processed/tlc/"
 )
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Transform TLC raw data using Spark."
+    )
+
+    parser.add_argument(
+        "--input",
+        default=DEFAULT_INPUT,
+        help="HDFS input Parquet path.",
+    )
+
+    parser.add_argument(
+        "--output",
+        default=DEFAULT_OUTPUT,
+        help="HDFS output directory.",
+    )
+
+    return parser.parse_args()
+
 def main() -> None:
+    args = parse_args()
+
+    input_path = args.input
+    output_path = args.output
     spark = (
         SparkSession.builder
         .appName("TLC-Transform")
@@ -23,7 +47,7 @@ def main() -> None:
 
     try:
         # 1. Read raw data
-        df = spark.read.parquet(INPUT)
+        df = spark.read.parquet(input_path)
 
         raw_count = df.count()
 
@@ -103,10 +127,10 @@ def main() -> None:
 
         # 6. Write processed data
         (
-            df.write
-            .mode("overwrite")
-            .partitionBy("pickup_date")
-            .parquet(OUTPUT)
+            df.write \
+            .mode("overwrite") \
+            .partitionBy("pickup_date") \
+            .parquet(output_path)
         )
 
         # 7. Validation output
@@ -117,7 +141,7 @@ def main() -> None:
         print(f"Raw rows: {raw_count}")
         print(f"Processed rows: {processed_count}")
         print(f"Removed rows: {raw_count - processed_count}")
-        print(f"Output: {OUTPUT}")
+        print(f"Output: {output_path}")
 
         print("\nProcessed schema:")
         df.printSchema()

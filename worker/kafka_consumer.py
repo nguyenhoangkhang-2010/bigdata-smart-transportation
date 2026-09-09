@@ -6,6 +6,7 @@ from worker.jobs.models import Job
 from worker.pipelines.event_parser import PipelineEventParser
 from worker.pipelines.executor import PipelineExecutor
 from worker.pipelines.staging import HDFSStagingClient
+from worker.pipelines.spark import SparkPipelineRunner
 
 
 class PipelineEventConsumer:
@@ -15,6 +16,7 @@ class PipelineEventConsumer:
         parser: PipelineEventParser | None = None,
         pipeline_executor: PipelineExecutor | None = None,
         staging_client: HDFSStagingClient | None = None,
+        spark_runner: SparkPipelineRunner | None = None,
     ) -> None:
         settings = get_settings()
 
@@ -35,12 +37,18 @@ class PipelineEventConsumer:
             staging_client or HDFSStagingClient()
         )
 
+        self.spark_runner = (
+            spark_runner or SparkPipelineRunner()
+        )
+
     def process_message(self, message) -> Job:
         event = self.parser.parse(message.value())
 
-        def stage_pipeline_data() -> None:
+        def execute_pipeline() -> None:
             staging_path = event.payload.get("staging_path")
             content = event.payload.get("content")
+            input_path = event.payload.get("input_path")
+            output_path = event.payload.get("output_path")
 
             if not isinstance(staging_path, str) or not staging_path:
                 raise ValueError(
@@ -54,6 +62,18 @@ class PipelineEventConsumer:
                     "content as a string."
                 )
 
+            if not isinstance(input_path, str) or not input_path:
+                raise ValueError(
+                    "Pipeline event payload requires "
+                    "a non-empty input_path."
+                )
+
+            if not isinstance(output_path, str) or not output_path:
+                raise ValueError(
+                    "Pipeline event payload requires "
+                    "a non-empty output_path."
+                )
+
             self.staging_client.write_text(
                 hdfs_path=(
                     "/data/smart_transportation/staging/"
@@ -62,9 +82,14 @@ class PipelineEventConsumer:
                 content=content,
             )
 
+            self.spark_runner.run_transformation(
+                input_path=input_path,
+                output_path=output_path,
+            )
+
         return self.pipeline_executor.execute(
             pipeline_name=event.pipeline_name,
-            operation=stage_pipeline_data,
+            operation=execute_pipeline,
         )
 
     def consume(
