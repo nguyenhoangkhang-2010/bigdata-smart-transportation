@@ -7,6 +7,7 @@ from worker.pipelines.event_parser import PipelineEventParser
 from worker.pipelines.executor import PipelineExecutor
 from worker.pipelines.staging import HDFSStagingClient
 from worker.pipelines.spark import SparkPipelineRunner
+from worker.pipelines.hive import HivePipelineRunner
 
 
 class PipelineEventConsumer:
@@ -17,6 +18,7 @@ class PipelineEventConsumer:
         pipeline_executor: PipelineExecutor | None = None,
         staging_client: HDFSStagingClient | None = None,
         spark_runner: SparkPipelineRunner | None = None,
+        hive_runner: HivePipelineRunner | None = None,
     ) -> None:
         settings = get_settings()
 
@@ -39,6 +41,10 @@ class PipelineEventConsumer:
 
         self.spark_runner = (
             spark_runner or SparkPipelineRunner()
+        )
+        
+        self.hive_runner = (
+            hive_runner or HivePipelineRunner()
         )
 
     def process_message(self, message) -> Job:
@@ -85,6 +91,12 @@ class PipelineEventConsumer:
             self.spark_runner.run_transformation(
                 input_path=input_path,
                 output_path=output_path,
+            )
+            
+            self.hive_runner.execute(
+                statements=[
+                    "MSCK REPAIR TABLE tlc_trips",
+                ]
             )
 
         return self.pipeline_executor.execute(
