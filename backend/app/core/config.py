@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     #Kafka
     kafka_bootstrap_servers: str = "localhost:9092"
     kafka_tlc_topic: str
+    kafka_pipeline_topic: str
     
     #TLC Data
     tlc_processed_path: str

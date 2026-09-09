@@ -1,17 +1,40 @@
-from worker.pipelines.executor import PipelineExecutor
+import argparse
+
+from worker.kafka_consumer import PipelineEventConsumer
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run the pipeline event worker."
+    )
+
+    parser.add_argument(
+        "--max-messages",
+        type=int,
+        default=None,
+        help="Maximum number of pipeline events to consume.",
+    )
+
+    return parser.parse_args()
 
 
 def main() -> None:
-    executor = PipelineExecutor()
+    args = parse_args()
 
-    job = executor.execute(
-        pipeline_name="example_pipeline",
-        operation=lambda: None,
+    if args.max_messages is not None and args.max_messages <= 0:
+        raise ValueError(
+            "--max-messages must be greater than 0."
+        )
+
+    consumer = PipelineEventConsumer()
+
+    consumed = consumer.consume(
+        max_messages=args.max_messages
     )
 
-    print(f"Job ID: {job.job_id}")
-    print(f"Pipeline: {job.pipeline_name}")
-    print(f"Status: {job.status.value}")
+    print(
+        f"Worker finished: consumed={consumed}"
+    )
 
 
 if __name__ == "__main__":
