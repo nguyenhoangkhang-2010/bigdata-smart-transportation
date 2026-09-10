@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 
-from backend.app.core.database import engine
+from backend.app.api.analytics import router as analytics_router
 from backend.app.core.config import get_settings
+from backend.app.core.database import engine
 
 
 settings = get_settings()
@@ -12,6 +13,8 @@ app = FastAPI(
     version=settings.app_version,
     description="Big Data Analytics Platform for Smart Transportation",
 )
+
+app.include_router(analytics_router)
 
 
 @app.get("/")
