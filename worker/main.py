@@ -2,6 +2,8 @@ import argparse
 
 from worker.kafka_consumer import PipelineEventConsumer
 
+from backend.app.core.database import init_db
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -20,6 +22,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    init_db()
 
     if args.max_messages is not None and args.max_messages <= 0:
         raise ValueError(
