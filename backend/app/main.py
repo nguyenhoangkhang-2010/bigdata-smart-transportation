@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from backend.app.api.analytics import router as analytics_router
+from backend.app.api.query import router as query_router
 from backend.app.core.config import get_settings
 from backend.app.core.database import engine
 
@@ -15,6 +16,7 @@ app = FastAPI(
 )
 
 app.include_router(analytics_router)
+app.include_router(query_router)
 
 
 @app.get("/")
