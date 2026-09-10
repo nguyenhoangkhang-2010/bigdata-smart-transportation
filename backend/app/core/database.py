@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.core.config import get_settings
 
+from backend.app.models import Base
+
 
 settings = get_settings()
 
@@ -27,3 +29,7 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+        
+        
+def init_db() -> None:
+    Base.metadata.create_all(bind=engine)

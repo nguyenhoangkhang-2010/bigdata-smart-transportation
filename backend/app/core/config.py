@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # HDFS
     hdfs_webhdfs_url: str
     hdfs_user: str
+    
+    # Hive
+    hive_host: str = "localhost"
+    hive_port: int = 10000
+    hive_database: str = "smart_transportation"
 
     model_config = SettingsConfigDict(
         env_file=".env",
