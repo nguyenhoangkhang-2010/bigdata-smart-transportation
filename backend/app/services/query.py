@@ -4,6 +4,7 @@ from typing import Any
 from pyhive import hive
 
 from backend.app.core.config import get_settings
+from backend.app.services.cache import QueryCache
 
 
 class QueryService:
@@ -18,7 +19,8 @@ class QueryService:
         self.host = host or settings.hive_host
         self.port = port or settings.hive_port
         self.database = database or settings.hive_database
-
+        self.cache = QueryCache()
+        
     def _execute_query(
         self,
         query: str,
@@ -63,14 +65,21 @@ class QueryService:
         self,
         query: str,
     ) -> dict[str, Any]:
+        cached_result = self.cache.get(query)
+
+        if cached_result is not None:
+            return cached_result
+
         columns, rows, execution_time_ms = self._execute_query(query)
 
-        return {
+        result = {
             "columns": columns,
             "rows": rows,
             "row_count": len(rows),
             "execution_time_ms": round(execution_time_ms, 2),
         }
+        self.cache.set(query, result)
+        return result
 
     def explain_query(
         self,

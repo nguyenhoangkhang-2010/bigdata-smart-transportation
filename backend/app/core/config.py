@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     #Redis
     redis_host: str = "localhost"
     redis_port: int = 6379
+    redis_cache_ttl_seconds: int = 300
     
     #Kafka
     kafka_bootstrap_servers: str = "localhost:9092"
