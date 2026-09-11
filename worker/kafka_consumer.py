@@ -124,6 +124,8 @@ class PipelineEventConsumer:
         content = event.payload.get("content")
         input_path = event.payload.get("input_path")
         output_path = event.payload.get("output_path")
+        spark_job = event.payload.get("spark_job")
+        hive_statements = event.payload.get("hive_statements")
 
         if not isinstance(staging_path, str) or not staging_path:
             raise ValueError(
@@ -149,23 +151,47 @@ class PipelineEventConsumer:
                 "a non-empty output_path."
             )
 
+        if not isinstance(spark_job, str) or not spark_job:
+            raise ValueError(
+                "Pipeline event payload requires "
+                "a non-empty spark_job."
+            )
+
+        if not isinstance(hive_statements, list):
+            raise ValueError(
+                "Pipeline event payload requires "
+                "hive_statements as a list."
+            )
+
+        if not all(
+            isinstance(statement, str) and statement.strip()
+            for statement in hive_statements
+        ):
+            raise ValueError(
+                "Pipeline event hive_statements must contain "
+                "non-empty strings."
+            )
+
+        settings = get_settings()
+
+        staging_root = settings.hdfs_staging_root.rstrip("/")
+
         self.staging_client.write_text(
             hdfs_path=(
-                "/data/smart_transportation/staging/"
+                f"{staging_root}/"
                 f"{staging_path.lstrip('/')}"
             ),
             content=content,
         )
 
         self.spark_runner.run_transformation(
+            script=spark_job,
             input_path=input_path,
             output_path=output_path,
         )
 
         self.hive_runner.execute(
-            statements=[
-                "MSCK REPAIR TABLE tlc_trips",
-            ]
+            statements=hive_statements,
         )
 
     def consume(
