@@ -1,62 +1,54 @@
-from datetime import date
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel
-
-
-class AnalyticsSummary(BaseModel):
-    total_trips: int
-    vendor_count: int
-    total_revenue: float | None
-    avg_trip_distance: float | None
-    avg_trip_duration_minutes: float | None
-    avg_passenger_count: float | None
+from pydantic import BaseModel, Field
 
 
-class DailyAnalytics(BaseModel):
-    pickup_date: date
-    trip_count: int
-    total_revenue: float | None
-    avg_trip_amount: float | None
-    avg_trip_distance: float | None
-    avg_trip_duration_minutes: float | None
-    avg_passenger_count: float | None
+Aggregation = Literal[
+    "count",
+    "count_distinct",
+    "sum",
+    "avg",
+    "min",
+    "max",
+]
 
 
-class HourlyAnalytics(BaseModel):
-    pickup_hour: int
-    trip_count: int
-    total_revenue: float | None
-    avg_trip_amount: float | None
-    avg_trip_distance: float | None
-    avg_trip_duration_minutes: float | None
+class AnalyticsMeasure(BaseModel):
+    column: str
+    aggregation: Aggregation
 
 
-class WeekdayAnalytics(BaseModel):
-    pickup_day_of_week: int
-    trip_count: int
-    total_revenue: float | None
-    avg_trip_amount: float | None
-    avg_trip_distance: float | None
-    avg_trip_duration_minutes: float | None
+class AnalyticsFilter(BaseModel):
+    column: str
+    operator: Literal[
+        "=",
+        "!=",
+        ">",
+        ">=",
+        "<",
+        "<=",
+    ]
+    value: Any
 
 
-class PaymentAnalytics(BaseModel):
-    payment_type: int
-    trip_count: int
-    total_revenue: float | None
-    avg_trip_amount: float | None
-    avg_tip_amount: float | None
+class AnalyticsOrderBy(BaseModel):
+    column: str
+    direction: Literal["asc", "desc"] = "asc"
 
 
-class LocationAnalytics(BaseModel):
-    location_id: int
-    trip_count: int
-    total_revenue: float | None
-    avg_trip_amount: float | None
-    avg_trip_distance: float | None
-    avg_trip_duration_minutes: float | None
+class AnalyticsRequest(BaseModel):
+    table: str
+    dimensions: list[str] = Field(default_factory=list)
+    measures: list[AnalyticsMeasure] = Field(default_factory=list)
+    filters: list[AnalyticsFilter] = Field(default_factory=list)
+    order_by: list[AnalyticsOrderBy] = Field(default_factory=list)
+    limit: int = Field(default=1000, ge=1, le=10000)
 
 
 class AnalyticsResponse(BaseModel):
-    data: list[dict[str, Any]]
+    columns: list[str]
+    rows: list[dict[str, Any]]
+    row_count: int
+    execution_time_ms: float
+    cache_status: Literal["HIT", "MISS"]
+    engine: str

@@ -1,11 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from backend.app.schemas.analytics import (
-    AnalyticsSummary,
-    DailyAnalytics,
-    HourlyAnalytics,
-    PaymentAnalytics,
-    WeekdayAnalytics,
+    AnalyticsRequest,
+    AnalyticsResponse,
 )
 from backend.app.services.analytics import AnalyticsService
 
@@ -16,51 +13,19 @@ router = APIRouter(
 )
 
 
-@router.get(
-    "/summary",
-    response_model=list[AnalyticsSummary],
+@router.post(
+    "/query",
+    response_model=AnalyticsResponse,
 )
-def get_summary() -> list[AnalyticsSummary]:
+def execute_analytics(
+    request: AnalyticsRequest,
+) -> AnalyticsResponse:
     service = AnalyticsService()
 
-    return service.get_summary()
-
-
-@router.get(
-    "/daily",
-    response_model=list[DailyAnalytics],
-)
-def get_daily_summary() -> list[DailyAnalytics]:
-    service = AnalyticsService()
-
-    return service.get_daily_summary()
-
-
-@router.get(
-    "/hourly",
-    response_model=list[HourlyAnalytics],
-)
-def get_hourly_summary() -> list[HourlyAnalytics]:
-    service = AnalyticsService()
-
-    return service.get_hourly_summary()
-
-
-@router.get(
-    "/weekday",
-    response_model=list[WeekdayAnalytics],
-)
-def get_weekday_summary() -> list[WeekdayAnalytics]:
-    service = AnalyticsService()
-
-    return service.get_weekday_summary()
-
-
-@router.get(
-    "/payment",
-    response_model=list[PaymentAnalytics],
-)
-def get_payment_summary() -> list[PaymentAnalytics]:
-    service = AnalyticsService()
-
-    return service.get_payment_summary()
+    try:
+        return service.execute(request)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
