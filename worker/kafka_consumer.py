@@ -80,6 +80,12 @@ class PipelineEventConsumer:
                 created_at=job.created_at,
             )
 
+            self._create_execution_metadata(
+                metadata_service=metadata_service,
+                job_id=job.job_id,
+                event=event,
+            )
+
             metadata_service.commit()
 
             result = self.pipeline_executor.execute(
@@ -115,6 +121,79 @@ class PipelineEventConsumer:
         finally:
             if db is not None:
                 db.close()
+
+    def _create_execution_metadata(
+        self,
+        *,
+        metadata_service: JobMetadataService,
+        job_id: str,
+        event: PipelineEvent,
+    ) -> None:
+        staging_path = event.payload.get("staging_path")
+        input_path = event.payload.get("input_path")
+        output_path = event.payload.get("output_path")
+        spark_job = event.payload.get("spark_job")
+        hive_statements = event.payload.get("hive_statements")
+
+        if not isinstance(staging_path, str) or not staging_path:
+            raise ValueError(
+                "Pipeline event payload requires "
+                "a non-empty staging_path."
+            )
+
+        if not isinstance(input_path, str) or not input_path:
+            raise ValueError(
+                "Pipeline event payload requires "
+                "a non-empty input_path."
+            )
+
+        if not isinstance(output_path, str) or not output_path:
+            raise ValueError(
+                "Pipeline event payload requires "
+                "a non-empty output_path."
+            )
+
+        if not isinstance(spark_job, str) or not spark_job:
+            raise ValueError(
+                "Pipeline event payload requires "
+                "a non-empty spark_job."
+            )
+
+        if not isinstance(hive_statements, list):
+            raise ValueError(
+                "Pipeline event payload requires "
+                "hive_statements as a list."
+            )
+
+        if not all(
+            isinstance(statement, str) and statement.strip()
+            for statement in hive_statements
+        ):
+            raise ValueError(
+                "Pipeline event hive_statements must contain "
+                "non-empty strings."
+            )
+
+        job_record = metadata_service.get_job(job_id)
+
+        if job_record is None:
+            raise RuntimeError(
+                f"Job metadata not found: {job_id}"
+            )
+
+        metadata_service.create_execution(
+            job=job_record,
+            event_id=event.event_id,
+            event_type=event.event_type,
+            staging_path=staging_path,
+            input_path=input_path,
+            output_path=output_path,
+            spark_job=spark_job,
+            hive_statements=hive_statements,
+            created_at=event.created_at or job_record.created_at,
+        )
+
+        metadata_service.commit()
 
     def _execute_pipeline(
         self,
