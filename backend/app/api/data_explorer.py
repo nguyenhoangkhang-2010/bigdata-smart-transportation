@@ -2,10 +2,12 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.app.schemas.data_explorer import (
     ColumnInfo,
-    DatabaseInfo,
     DataPreview,
+    DatabaseInfo,
     PartitionInfo,
     TableInfo,
+    TableStatistics,
+    TableStorage,
 )
 from backend.app.services.data_explorer import DataExplorerService
 
@@ -92,6 +94,42 @@ def get_preview(
 
     try:
         return service.get_preview(table, limit)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+
+
+@router.get(
+    "/tables/{table}/statistics",
+    response_model=TableStatistics,
+)
+def get_statistics(
+    table: str,
+) -> TableStatistics:
+    service = DataExplorerService()
+
+    try:
+        return service.get_statistics(table)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+
+
+@router.get(
+    "/tables/{table}/storage",
+    response_model=TableStorage,
+)
+def get_storage(
+    table: str,
+) -> TableStorage:
+    service = DataExplorerService()
+
+    try:
+        return service.get_storage(table)
     except ValueError as exc:
         raise HTTPException(
             status_code=400,
