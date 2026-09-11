@@ -1,5 +1,7 @@
 from fastapi import FastAPI
+from prometheus_client import make_asgi_app
 from sqlalchemy import text
+from backend.app.core.metrics_middleware import metrics_middleware
 
 from backend.app.api.analytics import router as analytics_router
 from backend.app.api.query import router as query_router
@@ -18,6 +20,11 @@ app = FastAPI(
     version=settings.app_version,
     description="Big Data Analytics Platform for Smart Transportation",
 )
+
+app.middleware("http")(metrics_middleware)
+
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 app.include_router(analytics_router)
 app.include_router(query_router)
