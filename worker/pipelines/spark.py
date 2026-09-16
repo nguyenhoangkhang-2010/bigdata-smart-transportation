@@ -1,13 +1,18 @@
 import subprocess
 from pathlib import Path
 
+from backend.app.core.config import get_settings
+
 
 class SparkPipelineRunner:
     def __init__(
         self,
         spark_submit: str = "spark-submit",
         project_root: str | None = None,
+        jobs_root: str | None = None,
     ) -> None:
+        settings = get_settings()
+
         self.spark_submit = spark_submit
 
         self.project_root = (
@@ -16,17 +21,35 @@ class SparkPipelineRunner:
             else Path(__file__).resolve().parents[2]
         )
 
+        self.jobs_root = Path(
+            jobs_root or settings.spark_jobs_root
+        )
+
+    def _resolve_script(self, script: str) -> Path:
+        script_path = (self.project_root / self.jobs_root / script).resolve()
+        jobs_root = (self.project_root / self.jobs_root).resolve()
+
+        if jobs_root not in script_path.parents:
+            raise ValueError(
+                "Spark job must be located inside the configured "
+                "Spark jobs directory."
+            )
+
+        if not script_path.is_file():
+            raise ValueError(
+                f"Spark job not found: {script}"
+            )
+
+        return script_path
+
     def run_transformation(
         self,
+        *,
+        script: str,
         input_path: str,
         output_path: str,
     ) -> None:
-        script_path = (
-            self.project_root
-            / "spark"
-            / "jobs"
-            / "transform_tlc.py"
-        )
+        script_path = self._resolve_script(script)
 
         command = [
             self.spark_submit,

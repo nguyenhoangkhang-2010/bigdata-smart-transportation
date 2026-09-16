@@ -1,10 +1,10 @@
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class GraphQueryRequest(BaseModel):
-    query: str
+    table: str
     source_column: str
     target_column: str
     relationship_column: str | None = None
@@ -14,7 +14,7 @@ class GraphQueryRequest(BaseModel):
 class GraphNode(BaseModel):
     id: str
     label: str
-    data: dict[str, Any] = {}
+    data: dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphEdge(BaseModel):
@@ -22,7 +22,7 @@ class GraphEdge(BaseModel):
     source: str
     target: str
     relationship: str | None = None
-    data: dict[str, Any] = {}
+    data: dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphResponse(BaseModel):

@@ -155,3 +155,78 @@ class DataExplorerService:
             "rows": rows,
             "row_count": len(rows),
         }
+
+    def get_statistics(
+        self,
+        table: str,
+    ) -> dict[str, Any]:
+        target_table = self._validate_identifier(table)
+
+        rows = self._execute_query(
+            f"DESCRIBE FORMATTED {target_table}"
+        )
+
+        metadata = self._extract_formatted_metadata(rows)
+
+        return {
+            "row_count": self._parse_int(
+                metadata.get("numRows")
+            ),
+            "file_count": self._parse_int(
+                metadata.get("numFiles")
+            ),
+            "total_size_bytes": self._parse_int(
+                metadata.get("totalSize")
+            ),
+        }
+
+    def get_storage(
+        self,
+        table: str,
+    ) -> dict[str, Any]:
+        target_table = self._validate_identifier(table)
+
+        rows = self._execute_query(
+            f"DESCRIBE FORMATTED {target_table}"
+        )
+
+        metadata = self._extract_formatted_metadata(rows)
+
+        return {
+            "location": metadata.get("location"),
+            "input_format": metadata.get("inputFormat"),
+            "output_format": metadata.get("outputFormat"),
+            "table_type": metadata.get("tableType"),
+        }
+
+    @staticmethod
+    def _extract_formatted_metadata(
+        rows: list[dict[str, Any]],
+    ) -> dict[str, str]:
+        metadata: dict[str, str] = {}
+
+        for row in rows:
+            values = list(row.values())
+
+            if len(values) < 2:
+                continue
+
+            key = str(values[0]).strip()
+            value = values[1]
+
+            if not key or value is None:
+                continue
+
+            metadata[key] = str(value).strip()
+
+        return metadata
+
+    @staticmethod
+    def _parse_int(value: str | None) -> int | None:
+        if value is None:
+            return None
+
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None

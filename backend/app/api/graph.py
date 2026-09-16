@@ -24,7 +24,7 @@ def query_graph(
 
     try:
         result = service.query_graph(
-            query=request.query,
+            table=request.table,
             source_column=request.source_column,
             target_column=request.target_column,
             relationship_column=request.relationship_column,

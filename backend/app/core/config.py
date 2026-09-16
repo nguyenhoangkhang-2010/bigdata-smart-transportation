@@ -8,36 +8,40 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: str = "development"
     debug: bool = True
-    
+
     #PostgreSQL
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_db: str = "smart_transportation"
     postgres_user: str = "bigdata"
     postgres_password: str = ""
-    
+
     #MongoDB
     mongo_host: str = "localhost"
     mongo_port: int = 27017
     mongo_db: str = "smart_transportation"
-    
+
     #Redis
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_cache_ttl_seconds: int = 300
-    
+
     #Kafka
     kafka_bootstrap_servers: str = "localhost:9092"
     kafka_tlc_topic: str
     kafka_pipeline_topic: str
-    
+
     #TLC Data
     tlc_processed_path: str
-    
+
     # HDFS
     hdfs_webhdfs_url: str
     hdfs_user: str
-    
+
+    # Worker / pipeline execution
+    hdfs_staging_root: str = "/data/smart_transportation/staging"
+    spark_jobs_root: str = "spark/jobs"
+
     # Hive
     hive_host: str = "localhost"
     hive_port: int = 10000
