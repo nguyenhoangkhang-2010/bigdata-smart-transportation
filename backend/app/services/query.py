@@ -1,6 +1,7 @@
 import time
 from typing import Any
 
+import sqlparse
 from pyhive import hive
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -26,6 +27,13 @@ class QueryService:
         self.port = port or settings.hive_port
         self.database = database or settings.hive_database
         self.cache = QueryCache()
+
+    def format_query(self, query: str) -> str:
+        return sqlparse.format(
+            query.strip(),
+            reindent=True,
+            keyword_case="upper",
+        )
 
     def _execute_query(
         self,

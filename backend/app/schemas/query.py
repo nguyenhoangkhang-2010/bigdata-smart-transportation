@@ -8,6 +8,10 @@ class QueryRequest(BaseModel):
     query: str = Field(min_length=1)
 
 
+class FormatQueryResponse(BaseModel):
+    query: str
+
+
 class QueryResponse(BaseModel):
     columns: list[str]
     rows: list[dict[str, Any]]
